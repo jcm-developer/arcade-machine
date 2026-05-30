@@ -23,11 +23,11 @@
   body{
     font-family:'DM Mono',monospace;color:var(--txt);
     background:
-      radial-gradient(1100px 700px at 50% -5%, rgba(255,46,136,.18), transparent 60%),
-      radial-gradient(900px 700px at 50% 110%, rgba(34,225,255,.12), transparent 55%),
+      radial-gradient(1300px 900px at 50% -8%, rgba(255,46,136,.20), transparent 60%),
+      radial-gradient(1100px 900px at 50% 115%, rgba(34,225,255,.14), transparent 55%),
       var(--bg);
-    min-height:100%;display:flex;align-items:center;justify-content:center;
-    padding:18px;overflow-x:hidden;
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:8px;overflow-x:hidden;
   }
   /* global scanline overlay */
   body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:200;
@@ -36,22 +36,69 @@
 
   /* ================= CABINET ================= */
   .cabinet{
-    position:relative;width:min(96vw,820px);
-    display:flex;flex-direction:column;align-items:center;
+    position:relative;width:100%;max-width:1700px;
+    display:flex;flex-direction:column;align-items:center;gap:8px;
     animation:rise .7s cubic-bezier(.2,.9,.2,1) both;
   }
   @keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
 
-  /* marquee */
+  /* the whole machine: side panels + central console, with a close-up perspective */
+  .body-row{display:flex;align-items:stretch;justify-content:center;width:100%;
+    perspective:2400px;}
+
+  /* ---- side art panels (the cabinet body seen on the left/right) ---- */
+  .side{flex:1 1 0;min-width:46px;max-width:36vw;position:relative;
+    transform-style:preserve-3d;}
+  .side.left {transform-origin:right center; transform:rotateY(26deg);}
+  .side.right{transform-origin:left center;  transform:rotateY(-26deg);}
+  .side .panel{position:absolute;inset:0;overflow:hidden;
+    background:
+      linear-gradient(180deg,#1a1230,#0b0816),
+      var(--cab);
+    border:2px solid rgba(120,90,180,.30);
+    box-shadow:inset 0 0 70px rgba(80,40,120,.30), 0 30px 80px -24px rgba(0,0,0,.9);}
+  .side.left  .panel{border-radius:18px 6px 6px 18px;border-right:0;}
+  .side.right .panel{border-radius:6px 18px 18px 6px;border-left:0;}
+  /* glowing edge strip near the screen seam */
+  .side .panel::before{content:"";position:absolute;top:6%;bottom:6%;width:10px;
+    background:linear-gradient(180deg,var(--neon),var(--neon2));
+    box-shadow:0 0 22px var(--neon);border-radius:6px;opacity:.7;filter:blur(.3px);}
+  .side.left  .panel::before{right:14px}
+  .side.right .panel::before{left:14px}
+  /* speaker grille dots near the top */
+  .side .panel::after{content:"";position:absolute;top:24px;width:64px;height:120px;
+    background-image:radial-gradient(rgba(255,255,255,.16) 1.6px, transparent 2px);
+    background-size:13px 13px;opacity:.6;}
+  .side.left  .panel::after{left:24px}
+  .side.right .panel::after{right:24px}
+  /* vertical cabinet title */
+  .side .vtitle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(180deg);
+    writing-mode:vertical-rl;font-family:'Press Start 2P',monospace;
+    font-size:clamp(16px,3.2vh,30px);letter-spacing:4px;white-space:nowrap;
+    background:linear-gradient(180deg,var(--neon2),var(--neon));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 14px rgba(255,46,136,.55));opacity:.92;}
+  .side.right .vtitle{transform:translate(-50%,-50%) rotate(0deg);}
+  .side .glyph{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);
+    font-size:clamp(34px,6vh,64px);filter:drop-shadow(0 0 16px rgba(34,225,255,.4));opacity:.85}
+
+  /* ---- central console (marquee + screen + controls) ---- */
+  .console{position:relative;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;
+    z-index:3;padding:12px clamp(10px,1.4vw,20px) 14px;
+    background:linear-gradient(180deg,var(--cab),var(--cab2));
+    border:2px solid rgba(120,90,180,.32);border-radius:14px;
+    box-shadow:0 36px 100px -24px rgba(0,0,0,.9), inset 0 0 60px rgba(80,40,120,.2);}
+
+  /* marquee (lit header) */
   .marquee{
-    width:92%;text-align:center;padding:16px 10px;border-radius:14px 14px 4px 4px;
+    width:100%;text-align:center;padding:12px 10px;border-radius:12px 12px 4px 4px;margin-bottom:10px;
     background:linear-gradient(180deg,#1c1330,#120c1f);
     border:2px solid rgba(255,46,136,.35);
     box-shadow:0 0 30px rgba(255,46,136,.25),inset 0 0 24px rgba(34,225,255,.12);
     position:relative;z-index:3;
   }
   .marquee h1{
-    font-family:'Press Start 2P',monospace;font-size:clamp(18px,4.4vw,34px);
+    font-family:'Press Start 2P',monospace;font-size:clamp(16px,2.6vw,30px);
     letter-spacing:2px;line-height:1.25;
     background:linear-gradient(180deg,var(--neon2),var(--neon) 90%);
     -webkit-background-clip:text;background-clip:text;color:transparent;
@@ -59,30 +106,18 @@
     animation:flicker 5s infinite;
   }
   @keyframes flicker{0%,18%,22%,25%,53%,57%,100%{opacity:1}20%,23%,55%{opacity:.72}}
-  .marquee .sub{font-family:'Silkscreen',monospace;color:var(--dim);font-size:11px;letter-spacing:3px;margin-top:8px}
+  .marquee .sub{font-family:'Silkscreen',monospace;color:var(--dim);font-size:clamp(8px,1vw,11px);letter-spacing:3px;margin-top:6px}
 
-  /* body of cabinet */
-  .hood{
-    width:100%;margin-top:-4px;padding:26px clamp(16px,5vw,52px) 18px;
-    background:linear-gradient(180deg,var(--cab),var(--cab2));
-    border:2px solid rgba(120,90,180,.25);border-radius:18px;
-    box-shadow:0 30px 80px -20px rgba(0,0,0,.8),inset 0 0 60px rgba(80,40,120,.18);
-    position:relative;
-  }
-  .hood::before,.hood::after{content:"";position:absolute;top:40px;bottom:120px;width:14px;
-    background:linear-gradient(90deg,rgba(255,46,136,.5),rgba(34,225,255,.4));
-    border-radius:8px;filter:blur(.3px);box-shadow:0 0 18px rgba(255,46,136,.5);opacity:.65}
-  .hood::before{left:14px}.hood::after{right:14px}
-
-  /* ---- the SCREEN (fixed 4:3 CRT, same for every game) ---- */
+  /* ---- the SCREEN (4:3 CRT, sized by viewport height — same for every game) ---- */
   .bezel{
-    position:relative;margin:0 auto;width:100%;max-width:680px;
-    background:#000;border-radius:18px;padding:18px;
+    position:relative;margin:0 auto;
+    background:#000;border-radius:18px;padding:clamp(10px,1.4vh,20px);
     border:3px solid #2a2440;
-    box-shadow:0 0 0 6px #08060f,0 0 60px rgba(34,225,255,.12),inset 0 0 30px rgba(0,0,0,.9);
+    box-shadow:0 0 0 6px #08060f,0 0 70px rgba(34,225,255,.14),inset 0 0 30px rgba(0,0,0,.9);
   }
   .screen{
-    position:relative;width:100%;aspect-ratio:4/3;background:#04020a;border-radius:10px;
+    position:relative;width:min(90vw,86vh,1080px);aspect-ratio:4/3;
+    background:#04020a;border-radius:10px;
     overflow:hidden;box-shadow:inset 0 0 60px rgba(0,0,0,.85);
   }
   .screen::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:50;
@@ -159,8 +194,8 @@
   .ghost-btn:hover{background:rgba(255,255,255,.12);border-color:#fff}
 
   /* ============ control deck ============ */
-  .deck{width:100%;margin-top:14px;padding:20px clamp(16px,5vw,40px);
-    background:linear-gradient(180deg,#181024,#0c0814);border-radius:16px;
+  .deck{width:100%;margin-top:12px;padding:clamp(10px,1.6vh,20px) clamp(16px,3vw,40px);
+    background:linear-gradient(180deg,#181024,#0c0814);border-radius:14px;
     border:2px solid rgba(120,90,180,.22);box-shadow:inset 0 6px 20px rgba(0,0,0,.6);
     display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
   .joystick{width:54px;height:54px;border-radius:50%;flex:0 0 auto;
@@ -179,25 +214,39 @@
   .coin{font-family:'Silkscreen',monospace;color:var(--dim);font-size:11px;letter-spacing:2px;text-align:center;flex:1 1 auto;min-width:120px}
   .coin .slot{width:60px;height:8px;background:#000;border-radius:4px;margin:6px auto;box-shadow:inset 0 0 6px rgba(255,210,74,.5)}
 
-  .footer{margin-top:14px;color:var(--dim);font-family:'Silkscreen',monospace;font-size:10px;letter-spacing:2px;text-align:center}
+  .footer{color:var(--dim);font-family:'Silkscreen',monospace;font-size:10px;letter-spacing:2px;text-align:center}
   .footer a{color:var(--neon2);text-decoration:none}
 
-  @media (max-width:560px){
-    .hood::before,.hood::after{display:none}
+  /* on narrow screens, drop the angle and let side panels shrink away */
+  @media (max-width:760px){
+    .side{max-width:0;min-width:0;flex:0 0 0;border:0}
+    .side .panel{display:none}
+    .console{flex:1 1 auto;width:100%}
     .deck{justify-content:center}
   }
 </style>
 </head>
 <body>
   <div class="cabinet">
-    <div class="marquee">
-      <h1>NEON ARCADE</h1>
-      <div class="sub">★ INSERT COIN · 4 GAMES · 1 CABINET ★</div>
-    </div>
+    <div class="body-row">
 
-    <div class="hood">
-      <div class="bezel">
-        <div class="screen">
+      <!-- LEFT cabinet side art -->
+      <div class="side left" aria-hidden="true">
+        <div class="panel">
+          <div class="vtitle">NEON ARCADE</div>
+          <div class="glyph">👾</div>
+        </div>
+      </div>
+
+      <!-- CENTRAL console -->
+      <div class="console">
+        <div class="marquee">
+          <h1>NEON ARCADE</h1>
+          <div class="sub">★ INSERT COIN · 4 GAMES · 1 CABINET ★</div>
+        </div>
+
+        <div class="bezel">
+          <div class="screen">
           <!-- the actual game -->
           <iframe id="gameFrame" title="game" allow="autoplay" allowfullscreen></iframe>
           <button id="exitBtn" class="hidden" aria-label="salir al menú">✕ MENÚ</button>
@@ -232,17 +281,27 @@
         </div>
       </div>
 
-      <div class="deck">
-        <div class="joystick" aria-hidden="true"></div>
-        <div class="coin">
-          INSERT COIN
-          <div class="slot"></div>
-          PLAYER 1 READY
-        </div>
-        <div class="btn-cluster" aria-hidden="true">
-          <div class="ab r"></div><div class="ab y"></div><div class="ab c"></div>
+        <div class="deck">
+          <div class="joystick" aria-hidden="true"></div>
+          <div class="coin">
+            INSERT COIN
+            <div class="slot"></div>
+            PLAYER 1 READY
+          </div>
+          <div class="btn-cluster" aria-hidden="true">
+            <div class="ab r"></div><div class="ab y"></div><div class="ab c"></div>
+          </div>
         </div>
       </div>
+
+      <!-- RIGHT cabinet side art -->
+      <div class="side right" aria-hidden="true">
+        <div class="panel">
+          <div class="vtitle">NEON ARCADE</div>
+          <div class="glyph">🕹️</div>
+        </div>
+      </div>
+
     </div>
 
     <div class="footer">USA ◄ ► PARA ELEGIR · ENTER PARA CONFIRMAR · ESC PARA SALIR DEL JUEGO</div>
