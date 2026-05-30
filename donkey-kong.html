@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BARREL CLIMB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0712; --txt:#ffe9c7; --dim:#b08a6e; --red:#ff5a4d; --cyan:#4ad6ff;
+    --gold:#ffd24a; --pink:#ff5fa8; --line:rgba(255,120,90,.2);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'DM Mono',monospace;color:var(--txt);
+    background:
+      radial-gradient(900px 600px at 50% -8%, rgba(255,90,77,.18), transparent 60%),
+      radial-gradient(700px 500px at 50% 110%, rgba(74,214,255,.1), transparent 55%),
+      var(--bg);
+    min-height:100%;display:flex;align-items:center;justify-content:center;
+    padding:16px;overflow:hidden;
+  }
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:60;
+    background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.16) 2px 3px);mix-blend-mode:multiply;opacity:.55}
+  .stage{display:flex;gap:24px;align-items:stretch;animation:rise .6s cubic-bezier(.2,.9,.2,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+
+  .frame{position:relative}
+  canvas#game{
+    display:block;image-rendering:pixelated;width:448px;height:520px;max-width:60vw;
+    background:#0a0712;border:1px solid var(--line);border-radius:8px;
+    box-shadow:0 0 0 1px rgba(0,0,0,.6),0 30px 70px -18px rgba(255,90,77,.35), inset 0 0 50px rgba(120,40,20,.2);
+  }
+  .side{display:flex;flex-direction:column;gap:14px;width:190px;justify-content:space-between}
+  .brand h1{font-family:'Silkscreen',monospace;font-size:24px;letter-spacing:1px;line-height:1.05;
+    background:linear-gradient(180deg,var(--gold),var(--red) 80%);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 12px rgba(255,90,77,.5))}
+  .brand p{font-size:10px;color:var(--dim);letter-spacing:3px;margin-top:6px}
+  .panel{background:rgba(28,16,18,.55);border:1px solid var(--line);border-radius:10px;padding:12px 14px;backdrop-filter:blur(6px)}
+  .panel .label{font-family:'Silkscreen',monospace;font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:8px}
+  .stat{display:flex;justify-content:space-between;align-items:baseline;margin:5px 0}
+  .stat .v{font-family:'Silkscreen',monospace;font-size:15px;text-shadow:0 0 10px rgba(255,90,77,.4)}
+  .stat.big .v{font-size:22px;color:var(--gold);text-shadow:0 0 16px rgba(255,210,74,.5)}
+  #lives{display:flex;gap:4px;font-size:16px}
+  .keys{font-size:10.5px;color:var(--dim);line-height:1.85}
+  .keys b{color:var(--cyan);font-weight:500}
+  .keys .row{display:flex;justify-content:space-between}
+
+  .overlay{position:absolute;inset:0;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;background:radial-gradient(circle at 50% 38%,rgba(30,12,14,.82),rgba(8,5,12,.96));backdrop-filter:blur(3px);
+    z-index:10;text-align:center;padding:24px}
+  .overlay.hidden{display:none}
+  .overlay h2{font-family:'Silkscreen',monospace;font-size:20px;letter-spacing:1px;
+    background:linear-gradient(180deg,var(--gold),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 12px rgba(255,95,168,.4))}
+  .overlay p{font-size:11.5px;color:var(--dim);max-width:230px;line-height:1.7}
+  .btn{font-family:'Silkscreen',monospace;font-size:12px;letter-spacing:1px;cursor:pointer;color:#160a06;
+    background:linear-gradient(180deg,var(--gold),var(--red));border:none;border-radius:8px;padding:12px 24px;
+    box-shadow:0 0 22px rgba(255,90,77,.5);transition:transform .12s,box-shadow .12s}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 0 34px rgba(255,90,77,.8)}
+  .btn:active{transform:translateY(0)}
+
+  .touch{display:none;flex-direction:column;gap:8px;margin-top:10px}
+  .touch .grp{display:flex;gap:8px;justify-content:center}
+  .touch button{width:56px;height:50px;border-radius:10px;cursor:pointer;background:rgba(28,16,18,.6);
+    border:1px solid var(--line);color:var(--cyan);font-size:20px;backdrop-filter:blur(6px)}
+  .touch button#jumpBtn{width:120px;color:var(--gold);font-family:'Silkscreen',monospace;font-size:11px}
+  .touch button:active{background:rgba(255,90,77,.25)}
+
+  @media (max-width:820px){
+    body{align-items:flex-start;overflow-y:auto}
+    .stage{flex-direction:column;gap:12px;align-items:center}
+    canvas#game{max-width:92vw}
+    .side{width:auto;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:10px}
+    .brand{width:100%;text-align:center}
+    .keys{display:none}
+    .touch{display:flex;width:100%}
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="frame">
+      <canvas id="game" width="448" height="520"></canvas>
+      <div id="overlay" class="overlay">
+        <h2 id="ovTitle">BARREL CLIMB</h2>
+        <p id="ovText">El gran simio tiene cautiva a tu compañera en lo alto. Trepa los andamios, esquiva los barriles y rescátala. Salta los barriles para sumar puntos.</p>
+        <button class="btn" id="startBtn">JUGAR</button>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="brand">
+        <h1>BARREL<br>CLIMB</h1>
+        <p>ARCADE CLIMBER</p>
+      </div>
+      <div class="panel">
+        <div class="label">MARCADOR</div>
+        <div class="stat big"><span>SCORE</span><span class="v" id="score">0</span></div>
+        <div class="stat"><span>VIDAS</span><span class="v" id="lives">♥ ♥ ♥</span></div>
+        <div class="stat"><span>NIVEL</span><span class="v" id="level">1</span></div>
+        <div class="stat"><span>BONUS</span><span class="v" id="bonus">5000</span></div>
+        <div class="stat"><span>RÉCORD</span><span class="v" id="best">0</span></div>
+      </div>
+      <div class="panel keys">
+        <div class="label">CONTROLES</div>
+        <div class="row"><span>Mover</span><b>← →</b></div>
+        <div class="row"><span>Trepar</span><b>↑ ↓</b></div>
+        <div class="row"><span>Saltar</span><b>Espacio / Z</b></div>
+        <div class="row"><span>Pausa</span><b>P</b></div>
+      </div>
+      <div class="touch" id="touch">
+        <div class="grp"><button data-act="up">↑</button></div>
+        <div class="grp">
+          <button data-act="left">←</button>
+          <button data-act="down">↓</button>
+          <button data-act="right">→</button>
+        </div>
+        <div class="grp"><button id="jumpBtn" data-act="jump">SALTAR</button></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const cv = document.getElementById('game');
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const W = 448, H = 520;
+
+  // ---- level geometry ----
+  const S = 16;                      // slope amplitude
+  const C = [468,400,332,264,196,128]; // center Y of girders G0..G5
+  const DIR = C.map((_,i) => (i % 2 === 0) ? -1 : 1); // G5 (idx5) = +1 (downhill right)
+  const BEAM = 8;
+  // top platform GT (index 6)
+  const GT = {y:74, x0:168, x1:280};
+
+  function surf(g, x){
+    if(g === 6){ return (x >= GT.x0 && x <= GT.x1) ? GT.y : null; }
+    const c = C[g], d = DIR[g];
+    const leftY = c - d*S, rightY = c + d*S;
+    return leftY + (rightY - leftY) * (x / W);
+  }
+
+  // ladders {x, lo, hi}
+  const LADDERS = [
+    {x:110,lo:0,hi:1},{x:330,lo:0,hi:1},
+    {x:200,lo:1,hi:2},{x:400,lo:1,hi:2},
+    {x:70 ,lo:2,hi:3},{x:300,lo:2,hi:3},
+    {x:150,lo:3,hi:4},{x:360,lo:3,hi:4},
+    {x:110,lo:4,hi:5},{x:300,lo:4,hi:5},
+    {x:224,lo:5,hi:6},
+  ];
+
+  const APE = {x:96, g:5};
+  const CAP = {x:224, g:6};
+
+  // ---- state ----
+  const PH = 18, PW = 12;            // player half-ish dims (height/width)
+  let player, barrels, sparks, baseY;
+  let score, lives, level, bonus, best, running, paused, over, won;
+  let spawnT, spawnGap, bonusT, invincible, freeze, barrelId;
+  const input = {left:false,right:false,up:false,down:false};
+
+  best = +(localStorage.getItem('barrel_climb_best') || 0);
+  document.getElementById('best').textContent = best;
+
+  function resetPlayer(){
+    player = { x:40, g:0, y:0, vy:0, state:'ground', ladder:null, face:1, walk:0, jumped:new Set() };
+    player.y = surf(0, player.x) - PH/2;
+  }
+
+  function startLevel(){
+    barrels = []; sparks = [];
+    spawnGap = Math.max(560, 1300 - level*120);
+    spawnT = 700; bonusT = 0; bonus = 5000; barrelId = 0;
+    invincible = 60; freeze = 0;
+    resetPlayer();
+    updateHUD();
+  }
+
+  function reset(){
+    score = 0; lives = 3; level = 1; over = false; won = false; paused = false;
+    startLevel();
+  }
+
+  function updateHUD(){
+    document.getElementById('score').textContent = score;
+    document.getElementById('level').textContent = level;
+    document.getElementById('bonus').textContent = Math.max(0, bonus|0);
+    document.getElementById('lives').textContent = '♥ '.repeat(Math.max(0,lives)).trim() || '—';
+    if(score > best){ best = score; localStorage.setItem('barrel_climb_best', best); document.getElementById('best').textContent = best; }
+  }
+
+  // ---- input ----
+  function setKey(k, v){
+    if(k==='ArrowLeft') input.left=v;
+    else if(k==='ArrowRight') input.right=v;
+    else if(k==='ArrowUp') input.up=v;
+    else if(k==='ArrowDown') input.down=v;
+  }
+  document.addEventListener('keydown', e=>{
+    if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)) e.preventDefault();
+    if(e.key==='p'||e.key==='P'){ togglePause(); return; }
+    if(!running||paused||over||won) return;
+    if(e.key===' '||e.key==='z'||e.key==='Z'){ tryJump(); }
+    setKey(e.key, true);
+  });
+  document.addEventListener('keyup', e=> setKey(e.key, false));
+
+  // touch
+  const touch = document.getElementById('touch');
+  function bindTouch(el){
+    const act = el.dataset.act;
+    const on = e=>{ e.preventDefault(); if(!running||paused||over||won) return;
+      if(act==='jump') tryJump(); else input[act]=true; };
+    const off = e=>{ e.preventDefault(); if(act!=='jump') input[act]=false; };
+    el.addEventListener('touchstart',on,{passive:false});
+    el.addEventListener('touchend',off,{passive:false});
+    el.addEventListener('mousedown',on); el.addEventListener('mouseup',off); el.addEventListener('mouseleave',off);
+  }
+  touch.querySelectorAll('button').forEach(bindTouch);
+
+  function tryJump(){
+    if(player.state==='ground'){
+      player.state='air'; player.vy=-7.2; player.jumped.clear();
+    }
+  }
+
+  // ---- update ----
+  function update(f){
+    if(freeze>0){ freeze-=f*16.7; return; }
+    if(invincible>0) invincible -= f;
+
+    // bonus countdown
+    bonusT += f*16.7;
+    if(bonusT > 1400){ bonusT=0; bonus=Math.max(0,bonus-100); updateHUD(); }
+
+    // spawn barrels
+    spawnT -= f*16.7;
+    if(spawnT<=0 && barrels.length<9){
+      spawnT = spawnGap + (Math.random()*500-250);
+      barrels.push({ id:barrelId++, x:APE.x+18, g:5, y:surf(5,APE.x+18)-8,
+        dir:DIR[5], state:'roll', px:APE.x+18, rot:0 });
+    }
+
+    updatePlayer(f);
+    for(let i=barrels.length-1;i>=0;i--){ if(updateBarrel(barrels[i], f)) barrels.splice(i,1); }
+
+    // collisions
+    if(invincible<=0){
+      for(const b of barrels){
+        const dx=Math.abs(b.x-player.x), dy=Math.abs(b.y-player.y);
+        if(dx<11 && dy<12){ die(); break; }
+        // jump-over scoring
+        if(player.state==='air' && !player.jumped.has(b.id) && Math.abs(b.x-player.x)<16 && b.y > player.y+PH/2-3){
+          player.jumped.add(b.id); score+=100; addSpark(player.x, player.y-14, '100'); updateHUD();
+        }
+      }
+    }
+    // sparks
+    for(let i=sparks.length-1;i>=0;i--){ const s=sparks[i]; s.t-=f*16.7; s.y-=f*0.6; if(s.t<=0) sparks.splice(i,1); }
+  }
+
+  function ladderAt(g, x, asTop){
+    for(const L of LADDERS){
+      if(asTop ? L.hi===g : L.lo===g){ if(Math.abs(x-L.x)<11) return L; }
+    }
+    return null;
+  }
+
+  function updatePlayer(f){
+    const p = player;
+    if(p.state==='ground'){
+      let vx=0;
+      if(input.left){ vx=-1.6; p.face=-1; }
+      if(input.right){ vx=1.6; p.face=1; }
+      p.x += vx*f;
+      p.x = Math.max(8, Math.min(W-8, p.x));
+      if(vx) p.walk += f*0.3; 
+      // keep on surface
+      const sy = surf(p.g, p.x);
+      if(sy!=null) p.y = sy - PH/2;
+      // mount ladder up
+      if(input.up){ const L=ladderAt(p.g, p.x, false); if(L){ p.state='climb'; p.ladder=L; p.x=L.x; } }
+      if(input.down){ const L=ladderAt(p.g, p.x, true); if(L){ p.state='climb'; p.ladder=L; p.x=L.x; } }
+    }
+    else if(p.state==='climb'){
+      const L=p.ladder;
+      const topCy = surf(L.hi, L.x) - PH/2;
+      const botCy = surf(L.lo, L.x) - PH/2;
+      if(input.up) p.y -= 1.4*f;
+      if(input.down) p.y += 1.4*f;
+      p.walk += (input.up||input.down)?f*0.3:0;
+      if(p.y <= topCy){ p.y=topCy; p.g=L.hi; p.state='ground'; p.ladder=null;
+        if(p.g===6){ win(); return; } }
+      else if(p.y >= botCy){ p.y=botCy; p.g=L.lo; p.state='ground'; p.ladder=null; }
+    }
+    else if(p.state==='air'){
+      // air control
+      if(input.left){ p.x-=1.2*f; p.face=-1; }
+      if(input.right){ p.x+=1.2*f; p.face=1; }
+      p.x=Math.max(8,Math.min(W-8,p.x));
+      const prevFeet = p.y+PH/2;
+      p.vy += 0.42*f;
+      p.y += p.vy*f;
+      const feet = p.y+PH/2;
+      if(p.vy>0){
+        let bestSurf=null;
+        for(let g=0;g<=6;g++){
+          const sy=surf(g,p.x); if(sy==null) continue;
+          if(prevFeet<=sy+2 && feet>=sy-1){ if(bestSurf==null||sy<bestSurf){ bestSurf=sy; var lg=g; } }
+        }
+        if(bestSurf!=null){ p.y=bestSurf-PH/2; p.vy=0; p.g=lg; p.state='ground'; p.jumped.clear();
+          if(lg===6){ win(); return; } }
+      }
+    }
+  }
+
+  function updateBarrel(b, f){
+    const spd = 1.35 + level*0.12;
+    if(b.state==='roll'){
+      b.px = b.x;
+      b.x += b.dir*spd*f;
+      b.rot += b.dir*0.18*f;
+      // chance to take a ladder down
+      if(b.g>0){
+        for(const L of LADDERS){
+          if(L.hi===b.g && ((b.px<L.x && b.x>=L.x)||(b.px>L.x && b.x<=L.x))){
+            if(Math.random()<0.28){ b.state='ladder'; b.x=L.x; b.target=L.lo; }
+            break;
+          }
+        }
+      }
+      if(b.state==='roll'){
+        const sy=surf(b.g,b.x); b.y=sy-8;
+        // reached downhill edge -> drop or exit
+        if(b.dir>0 && b.x>=W-10){ if(b.g>0){ b.g--; b.dir=DIR[b.g]; b.x=W-12; b.y=surf(b.g,b.x)-8; } else return true; }
+        else if(b.dir<0 && b.x<=10){ if(b.g>0){ b.g--; b.dir=DIR[b.g]; b.x=12; b.y=surf(b.g,b.x)-8; } else return true; }
+      }
+    } else if(b.state==='ladder'){
+      b.y += spd*f; b.rot += 0.12*f;
+      const sy=surf(b.target, b.x)-8;
+      if(b.y>=sy){ b.y=sy; b.g=b.target; b.dir=DIR[b.g]; b.state='roll'; }
+    }
+    return false;
+  }
+
+  function addSpark(x,y,txt){ sparks.push({x,y,txt,t:700}); }
+
+  function die(){
+    lives--; updateHUD();
+    addSpark(player.x, player.y-12, '✸');
+    freeze=420;
+    if(lives<=0){ over=true; running=false;
+      showOverlay('GAME OVER','Score: '+score+'  ·  Nivel: '+level+'\nEl simio gana esta vez.', 'REINTENTAR');
+    } else {
+      resetPlayer(); invincible=90;
+    }
+  }
+
+  function win(){
+    score += Math.max(0,bonus|0) + level*200; bonus=0; updateHUD();
+    won=true; running=false; freeze=0;
+    showOverlay('¡RESCATADA!','Nivel '+level+' superado.\nBonus + '+ (level*200) +' pts.\n¿Subes más alto?', 'NIVEL '+(level+1));
+  }
+
+  function nextLevel(){ level++; won=false; running=true; startLevel(); document.getElementById('overlay').classList.add('hidden'); requestAnimationFrame(loop); }
+
+  // ---- rendering ----
+  function px(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(x|0,y|0,w,h); }
+
+  function drawGirders(){
+    for(let g=0; g<6; g++){
+      for(let x=0; x<W; x+=7){
+        const y=surf(g,x);
+        px(x, y, 8, BEAM, '#ff5a4d');
+        px(x, y, 8, 2, '#ff8c74');           // top highlight
+        px(x, y+BEAM-2, 8, 2, '#b53127');     // bottom shade
+      }
+      for(let x=6; x<W; x+=28){ const y=surf(g,x); px(x, y+3, 2, 2, '#7a1f18'); } // rivets
+    }
+    // top platform
+    for(let x=GT.x0;x<=GT.x1;x+=7){ px(x,GT.y,8,BEAM,'#ff5a4d'); px(x,GT.y,8,2,'#ff8c74'); px(x,GT.y+BEAM-2,8,2,'#b53127'); }
+  }
+
+  function drawLadders(){
+    for(const L of LADDERS){
+      const ty=surf(L.hi,L.x), by=surf(L.lo,L.x);
+      px(L.x-7, ty, 2, by-ty, '#2fa8d6');
+      px(L.x+5, ty, 2, by-ty, '#2fa8d6');
+      px(L.x-7, ty, 2, by-ty>0?2:2, '#7be6ff');
+      for(let y=ty+6; y<by; y+=10){ px(L.x-7, y, 12, 2, '#4ad6ff'); }
+    }
+  }
+
+  function drawHero(){
+    const p=player;
+    if(invincible>0 && (Math.floor(invincible/6)%2===0)) return; // blink
+    const x=Math.round(p.x), y=Math.round(p.y), f=p.face;
+    const climbing=p.state==='climb';
+    // body
+    px(x-5, y-9, 10, 4, '#ff4040');     // cap
+    px(x-5, y-9, 10, 2, '#ff6b6b');
+    px(x-4, y-5, 8, 4, '#ffce9e');      // face
+    px(x + (f>0?2:-3), y-4, 1, 1, '#1a0d08'); // eye hint
+    px(x-5, y-1, 10, 6, '#2b6cff');     // overalls
+    px(x-5, y-1, 10, 2, '#ff4040');     // shirt strap line
+    // legs/arms (anim)
+    const swing = Math.sin(p.walk*6) * (climbing?2:3);
+    if(climbing){
+      px(x-6, y+1+swing, 3, 4, '#ffce9e');  // arms up
+      px(x+3, y+1-swing, 3, 4, '#ffce9e');
+      px(x-3, y+5, 3, 4, '#1640b0');
+      px(x+1, y+5, 3, 4, '#1640b0');
+    } else {
+      px(x-4, y+5+swing, 3, 4, '#6b3b1f'); // boots
+      px(x+1, y+5-swing, 3, 4, '#6b3b1f');
+      px(x-7, y+0, 3, 4, '#ffce9e');       // arms
+      px(x+4, y+0, 3, 4, '#ffce9e');
+    }
+  }
+
+  function drawBarrels(){
+    for(const b of barrels){
+      const x=Math.round(b.x), y=Math.round(b.y);
+      px(x-8, y-6, 16, 12, '#c8732d');
+      px(x-8, y-6, 16, 2, '#e09a52');
+      px(x-8, y+4, 16, 2, '#8a4a16');
+      // bands rotate
+      const off=Math.round(Math.sin(b.rot)*4);
+      px(x-2+off, y-6, 2, 12, '#5e2f0d');
+      px(x-6+off, y-6, 1, 12, '#7a3d10');
+      px(x+3+off, y-6, 1, 12, '#7a3d10');
+    }
+  }
+
+  function drawApe(){
+    const x=APE.x, y=surf(5,x)-2;
+    px(x-16, y-30, 32, 26, '#7a4a22');     // body
+    px(x-16, y-30, 32, 4, '#9a6532');
+    px(x-12, y-40, 24, 12, '#7a4a22');     // head
+    px(x-8, y-37, 16, 7, '#3a2210');       // face
+    px(x-6, y-36, 3, 3, '#ffd24a'); px(x+3, y-36, 3, 3, '#ffd24a'); // eyes
+    px(x-6, y-31, 12, 2, '#1a0d05');
+    px(x-22, y-26, 7, 16, '#6b3f1d'); px(x+15, y-26, 7, 16, '#6b3f1d'); // arms
+    px(x-13, y-4, 9, 8, '#5a3318'); px(x+4, y-4, 9, 8, '#5a3318'); // legs
+  }
+
+  function drawCaptive(){
+    const x=CAP.x, y=GT.y-2;
+    px(x-4, y-20, 8, 5, '#ffd24a');   // hair
+    px(x-3, y-15, 6, 4, '#ffce9e');   // face
+    px(x-5, y-11, 10, 9, '#ff5fa8');  // dress
+    px(x-5, y-11, 10, 2, '#ff8cc4');
+    px(x-3, y-2, 2, 3, '#ffce9e'); px(x+1, y-2, 2, 3, '#ffce9e');
+    // little "!" when in danger
+    if(running && !won){ px(x+8, y-22, 2, 5, '#ff5a4d'); px(x+8, y-15, 2, 2, '#ff5a4d'); }
+  }
+
+  function drawSparks(){
+    ctx.font='bold 12px Silkscreen, monospace'; ctx.textAlign='center';
+    for(const s of sparks){ ctx.fillStyle='rgba(255,210,74,'+(s.t/700)+')'; ctx.fillText(s.txt, s.x, s.y); }
+  }
+
+  function render(){
+    ctx.clearRect(0,0,W,H);
+    // faint ground glow
+    const grd=ctx.createLinearGradient(0,0,0,H); grd.addColorStop(0,'rgba(255,90,77,.05)'); grd.addColorStop(1,'rgba(74,214,255,.04)');
+    ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+    drawGirders();
+    drawLadders();
+    drawApe();
+    drawCaptive();
+    drawBarrels();
+    drawHero();
+    drawSparks();
+  }
+
+  // ---- loop ----
+  let lastT=0;
+  function loop(t){
+    if(!running){ return; }
+    if(!lastT) lastT=t;
+    let dt=t-lastT; lastT=t; if(dt>50) dt=50;
+    const f=dt/16.7;
+    if(!paused && !over && !won) update(f);
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  function showOverlay(title,text,btn){
+    const o=document.getElementById('overlay');
+    document.getElementById('ovTitle').textContent=title;
+    document.getElementById('ovText').textContent=text;
+    document.getElementById('startBtn').textContent=btn;
+    o.classList.remove('hidden');
+  }
+  function togglePause(){
+    if(!running||over||won) return;
+    paused=!paused;
+    if(paused) showOverlay('PAUSA','Respira. El simio también.','CONTINUAR');
+    else{ document.getElementById('overlay').classList.add('hidden'); lastT=0; }
+  }
+
+  document.getElementById('startBtn').addEventListener('click', ()=>{
+    if(won){ nextLevel(); return; }
+    if(paused && running){ togglePause(); return; }
+    reset(); running=true; lastT=0;
+    document.getElementById('overlay').classList.add('hidden');
+    requestAnimationFrame(loop);
+  });
+
+  // initial paint
+  reset(); running=false; render();
+})();
+</script>
+</body>
+</html>
