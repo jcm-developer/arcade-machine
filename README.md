@@ -1,7 +1,7 @@
 # 🕹️ NEON ARCADE
 
 Una máquina recreativa retro en el navegador. Una sola cabina con pantalla CRT 4:3
-desde la que eliges entre 5 juegos, lees las instrucciones y juegas — todos comparten
+desde la que eliges entre 11 juegos, lees las instrucciones y juegas — todos comparten
 el mismo tamaño de pantalla.
 
 ## Juegos
@@ -15,6 +15,12 @@ Todos los juegos viven en la carpeta [`games/`](games/).
 | 🦍 **Barrel Climb** | Plataformas / trepar | `games/donkey-kong.html` |
 | 🏓 **Neon Pong** | Duelo de palas | `games/pong.html` |
 | 🏎️ **Apex GP** | Carreras F1 | `games/f1.html` |
+| 🐍 **Neon Snake** | Arcade / crecer | `games/snake.html` |
+| 👾 **Neon Invaders** | Shooter / oleadas | `games/invaders.html` |
+| 🔶 **Neon Breakout** | Arcade / ladrillos | `games/breakout.html` |
+| 🪨 **Neon Asteroids** | Vectorial / espacio | `games/asteroids.html` |
+| 🐸 **Neon Frogger** | Arcade / cruzar | `games/frogger.html` |
+| 🔢 **Neon 2048** | Puzzle / fusionar | `games/2048.html` |
 
 ## Controles de la cabina
 

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NEON SNAKE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07060f;
+    --panel:rgba(18,15,38,.55);
+    --line:rgba(120,110,200,.18);
+    --grid:rgba(120,110,200,.06);
+    --txt:#d7d2ff;
+    --dim:#7b75b8;
+    --cyan:#22e1ff;
+    --pink:#ff3ca6;
+    --gold:#ffd24a;
+    --accent:#a98bff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'DM Mono',monospace;
+    background:
+      radial-gradient(1200px 700px at 50% -10%, rgba(80,50,150,.35), transparent 60%),
+      radial-gradient(900px 600px at 100% 110%, rgba(255,60,166,.12), transparent 55%),
+      var(--bg);
+    color:var(--txt);
+    min-height:100%;
+    display:flex;align-items:center;justify-content:center;
+    padding:18px;overflow:hidden;position:relative;
+  }
+  /* scanlines */
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:50;
+    background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.18) 2px 3px);
+    mix-blend-mode:multiply;opacity:.5;
+  }
+  .stage{
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+    animation:rise .7s cubic-bezier(.2,.9,.2,1) both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+
+  .brand{text-align:center;line-height:1}
+  .brand h1{
+    font-family:'Silkscreen',monospace;font-weight:700;
+    font-size:26px;letter-spacing:3px;
+    background:linear-gradient(180deg,var(--cyan),var(--accent) 70%,var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 14px rgba(120,80,255,.55));
+  }
+  .brand p{font-size:10.5px;color:var(--dim);letter-spacing:3px;margin-top:6px}
+
+  .hud{
+    display:flex;gap:22px;align-items:baseline;
+    font-family:'Silkscreen',monospace;font-size:9px;letter-spacing:2px;color:var(--dim);
+  }
+  .hud .v{font-size:16px;color:var(--txt);text-shadow:0 0 12px rgba(120,90,255,.5);margin-left:8px}
+  .hud .v.gold{color:var(--gold);text-shadow:0 0 16px rgba(255,210,74,.5)}
+
+  .board-wrap{position:relative}
+  canvas#board{
+    display:block;
+    background:
+      linear-gradient(var(--grid) 1px,transparent 1px) 0 0/100% 4.1666%,
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/4.1666% 100%,
+      rgba(8,6,20,.7);
+    border:1px solid var(--line);
+    border-radius:10px;
+    box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 30px 80px -20px rgba(120,60,255,.45), inset 0 0 60px rgba(80,40,160,.25);
+  }
+
+  .keys{
+    font-size:10.5px;color:var(--dim);line-height:1.9;
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:10px 16px;backdrop-filter:blur(6px);display:flex;gap:22px;flex-wrap:wrap;justify-content:center;
+  }
+  .keys b{color:var(--accent);font-weight:500}
+
+  /* overlay */
+  .overlay{
+    position:absolute;inset:0;border-radius:10px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+    background:radial-gradient(circle at 50% 40%,rgba(20,12,45,.82),rgba(7,6,15,.96));
+    backdrop-filter:blur(3px);z-index:10;text-align:center;padding:20px;
+  }
+  .overlay.hidden{display:none}
+  .overlay h2{font-family:'Silkscreen',monospace;font-size:22px;letter-spacing:1px;
+    background:linear-gradient(180deg,var(--cyan),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 14px rgba(255,60,166,.4))}
+  .overlay p{font-size:11.5px;color:var(--dim);max-width:260px;line-height:1.7}
+  .btn{
+    font-family:'Silkscreen',monospace;font-size:12px;letter-spacing:1px;cursor:pointer;
+    color:#0a0815;background:linear-gradient(180deg,var(--cyan),var(--accent));
+    border:none;border-radius:8px;padding:12px 22px;
+    box-shadow:0 0 24px rgba(120,90,255,.55);transition:transform .12s,box-shadow .12s;
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 0 36px rgba(120,90,255,.8)}
+  .btn:active{transform:translateY(0)}
+
+  @media (max-width:760px){
+    body{align-items:flex-start;overflow-y:auto}
+    .keys{display:none}
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="brand">
+      <h1>NEON SNAKE</h1>
+      <p>ARCADE · 2026</p>
+    </div>
+
+    <div class="hud">
+      <span>PUNTOS<span class="v" id="score">0</span></span>
+      <span>RÉCORD<span class="v gold" id="best">0</span></span>
+    </div>
+
+    <div class="board-wrap">
+      <canvas id="board" width="600" height="600"></canvas>
+      <div id="overlay" class="overlay">
+        <h2 id="ovTitle">NEON SNAKE</h2>
+        <p id="ovText">Come la comida para crecer. No choques con las paredes ni contigo mismo.</p>
+        <button class="btn" id="startBtn">JUGAR</button>
+      </div>
+    </div>
+
+    <div class="keys">
+      <span>Mover <b>← → ↑ ↓ / WASD</b></span>
+      <span>Pausa <b>P</b></span>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const GRID = 24, CELL = 25, W = GRID * CELL, H = GRID * CELL;
+  const SNAKE_COLOR = '#3ee68a', FOOD_COLOR = '#ffd24a';
+  const board = document.getElementById('board');
+  const ctx = board.getContext('2d');
+
+  let snake, dir, nextDir, food, score, best;
+  let stepMs, acc, last, running = false, paused = false, over = false;
+
+  best = +(localStorage.getItem('neon_snake_best') || 0);
+  document.getElementById('best').textContent = best;
+
+  function placeFood(){
+    let p;
+    do {
+      p = { x:(Math.random()*GRID)|0, y:(Math.random()*GRID)|0 };
+    } while(snake.some(s => s.x === p.x && s.y === p.y));
+    food = p;
+  }
+
+  function reset(){
+    const cx = (GRID/2)|0, cy = (GRID/2)|0;
+    snake = [ {x:cx,y:cy}, {x:cx-1,y:cy}, {x:cx-2,y:cy} ];
+    dir = {x:1,y:0}; nextDir = {x:1,y:0};
+    score = 0; stepMs = 110; acc = 0;
+    over = false; paused = false;
+    placeFood();
+    updateHUD();
+  }
+
+  function updateHUD(){
+    document.getElementById('score').textContent = score;
+    if(score > best){
+      best = score;
+      localStorage.setItem('neon_snake_best', best);
+      document.getElementById('best').textContent = best;
+    }
+  }
+
+  function setDir(x,y){
+    // no permitir giro de 180º instantáneo (respecto a la dirección actual en curso)
+    if(x === -dir.x && y === -dir.y) return;
+    nextDir = {x, y};
+  }
+
+  function step(){
+    dir = nextDir;
+    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+    // colisión con paredes
+    if(head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID){ gameOver(); return; }
+    // colisión consigo misma
+    for(let i=0;i<snake.length;i++){
+      if(snake[i].x === head.x && snake[i].y === head.y){ gameOver(); return; }
+    }
+
+    snake.unshift(head);
+
+    if(head.x === food.x && head.y === food.y){
+      score += 10;
+      updateHUD();
+      // acelera ligeramente con la puntuación
+      stepMs = Math.max(60, 110 - Math.floor(score / 50) * 6);
+      placeFood();
+    } else {
+      snake.pop();
+    }
+  }
+
+  // ---- rendering ----
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // comida con glow neón
+    ctx.save();
+    ctx.shadowColor = FOOD_COLOR; ctx.shadowBlur = 24;
+    ctx.fillStyle = FOOD_COLOR;
+    const fx = food.x*CELL + CELL/2, fy = food.y*CELL + CELL/2;
+    ctx.beginPath(); ctx.arc(fx, fy, CELL*0.32, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // serpiente con glow neón
+    const p = CELL*0.12, s = CELL - p*2;
+    for(let i = snake.length-1; i >= 0; i--){
+      const seg = snake[i];
+      const head = i === 0;
+      ctx.save();
+      ctx.shadowColor = SNAKE_COLOR; ctx.shadowBlur = head ? 22 : 12;
+      ctx.globalAlpha = head ? 1 : 0.9;
+      ctx.fillStyle = SNAKE_COLOR;
+      roundRect(seg.x*CELL+p, seg.y*CELL+p, s, s, CELL*0.22); ctx.fill();
+      ctx.restore();
+    }
+
+    // ojos en la cabeza
+    if(snake.length){
+      const hseg = snake[0];
+      const hx = hseg.x*CELL, hy = hseg.y*CELL;
+      ctx.save();
+      ctx.fillStyle = '#07060f';
+      const off = CELL*0.28, r = CELL*0.09;
+      let e1, e2;
+      if(dir.x !== 0){
+        e1 = {x:hx+CELL/2+dir.x*off, y:hy+CELL*0.34};
+        e2 = {x:hx+CELL/2+dir.x*off, y:hy+CELL*0.66};
+      } else {
+        e1 = {x:hx+CELL*0.34, y:hy+CELL/2+dir.y*off};
+        e2 = {x:hx+CELL*0.66, y:hy+CELL/2+dir.y*off};
+      }
+      ctx.beginPath(); ctx.arc(e1.x,e1.y,r,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(e2.x,e2.y,r,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function loop(t){
+    if(!running) return;
+    if(!last) last = t;
+    const dt = t - last; last = t;
+    if(!paused && !over){
+      acc += dt;
+      while(acc >= stepMs){ step(); acc -= stepMs; if(over) break; }
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // ---- game control ----
+  function start(){
+    reset();
+    document.getElementById('overlay').classList.add('hidden');
+    running = true; last = 0;
+    requestAnimationFrame(loop);
+  }
+
+  function showOverlay(title, text, btn){
+    const o = document.getElementById('overlay');
+    document.getElementById('ovTitle').textContent = title;
+    document.getElementById('ovText').textContent = text;
+    document.getElementById('startBtn').textContent = btn;
+    o.classList.remove('hidden');
+  }
+
+  function gameOver(){
+    over = true; running = false;
+    showOverlay('GAME OVER', 'Puntos: ' + score + '  ·  ¡Inténtalo de nuevo!', 'REINTENTAR');
+  }
+
+  function togglePause(){
+    if(over || !running) return;
+    paused = !paused;
+    if(paused) showOverlay('PAUSA', 'La serpiente te espera. Respira.', 'CONTINUAR');
+    else { document.getElementById('overlay').classList.add('hidden'); last = performance.now(); }
+  }
+
+  document.getElementById('startBtn').addEventListener('click', () => {
+    if(paused && running){ togglePause(); } else { start(); }
+  });
+
+  document.addEventListener('keydown', e => {
+    const k = e.key;
+    if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(k)) e.preventDefault();
+    if(k === 'p' || k === 'P'){ togglePause(); return; }
+    if(!running || paused || over) return;
+    switch(k){
+      case 'ArrowLeft': case 'a': case 'A': setDir(-1,0); break;
+      case 'ArrowRight': case 'd': case 'D': setDir(1,0); break;
+      case 'ArrowUp': case 'w': case 'W': setDir(0,-1); break;
+      case 'ArrowDown': case 's': case 'S': setDir(0,1); break;
+    }
+  });
+
+  // pintura inicial
+  reset(); running = false; draw();
+})();
+</script>
+</body>
+</html>
