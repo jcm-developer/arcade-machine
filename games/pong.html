@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NEON PONG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07060f;
+    --panel:rgba(18,15,38,.55);
+    --line:rgba(120,110,200,.18);
+    --txt:#d7d2ff;
+    --dim:#7b75b8;
+    --cyan:#22e1ff;
+    --pink:#ff3ca6;
+    --gold:#ffd24a;
+    --accent:#a98bff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'DM Mono',monospace;
+    background:
+      radial-gradient(1200px 700px at 50% -10%, rgba(80,50,150,.35), transparent 60%),
+      radial-gradient(900px 600px at 100% 110%, rgba(255,60,166,.12), transparent 55%),
+      var(--bg);
+    color:var(--txt);
+    min-height:100%;
+    display:flex;align-items:center;justify-content:center;
+    padding:18px;overflow:hidden;position:relative;
+  }
+  /* scanlines */
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:50;
+    background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.18) 2px 3px);
+    mix-blend-mode:multiply;opacity:.5;
+  }
+  .stage{
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+    animation:rise .7s cubic-bezier(.2,.9,.2,1) both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+
+  .brand{text-align:center;line-height:1}
+  .brand h1{
+    font-family:'Silkscreen',monospace;font-weight:700;
+    font-size:26px;letter-spacing:3px;
+    background:linear-gradient(180deg,var(--cyan),var(--accent) 70%,var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 14px rgba(120,80,255,.55));
+  }
+  .brand p{font-size:10.5px;color:var(--dim);letter-spacing:3px;margin-top:6px}
+
+  .board-wrap{position:relative}
+  canvas#board{
+    display:block;
+    background:rgba(8,6,20,.7);
+    border:1px solid var(--line);
+    border-radius:10px;
+    box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 30px 80px -20px rgba(120,60,255,.45), inset 0 0 60px rgba(80,40,160,.25);
+  }
+
+  .keys{
+    font-size:10.5px;color:var(--dim);line-height:1.9;
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:10px 16px;backdrop-filter:blur(6px);display:flex;gap:22px;flex-wrap:wrap;justify-content:center;
+  }
+  .keys b{color:var(--accent);font-weight:500}
+
+  /* overlay */
+  .overlay{
+    position:absolute;inset:0;border-radius:10px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+    background:radial-gradient(circle at 50% 40%,rgba(20,12,45,.82),rgba(7,6,15,.96));
+    backdrop-filter:blur(3px);z-index:10;text-align:center;padding:20px;
+  }
+  .overlay.hidden{display:none}
+  .overlay h2{font-family:'Silkscreen',monospace;font-size:22px;letter-spacing:1px;
+    background:linear-gradient(180deg,var(--cyan),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 14px rgba(255,60,166,.4))}
+  .overlay p{font-size:11.5px;color:var(--dim);max-width:260px;line-height:1.7}
+  .modes{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .btn{
+    font-family:'Silkscreen',monospace;font-size:12px;letter-spacing:1px;cursor:pointer;
+    color:#0a0815;background:linear-gradient(180deg,var(--cyan),var(--accent));
+    border:none;border-radius:8px;padding:12px 22px;
+    box-shadow:0 0 24px rgba(120,90,255,.55);transition:transform .12s,box-shadow .12s;
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 0 36px rgba(120,90,255,.8)}
+  .btn:active{transform:translateY(0)}
+  .btn.alt{background:linear-gradient(180deg,var(--gold),#ffae00);box-shadow:0 0 24px rgba(255,210,74,.5)}
+
+  @media (max-width:760px){
+    body{align-items:flex-start;overflow-y:auto}
+    .keys{display:none}
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="brand">
+      <h1>NEON PONG</h1>
+      <p>ARCADE · 2026</p>
+    </div>
+
+    <div class="board-wrap">
+      <canvas id="board" width="800" height="600"></canvas>
+      <div id="overlay" class="overlay">
+        <h2 id="ovTitle">NEON PONG</h2>
+        <p id="ovText">El primero en llegar a 7 puntos gana. Devuelve la bola y no falles.</p>
+        <div class="modes">
+          <button class="btn" id="onePlayer">1 JUGADOR</button>
+          <button class="btn alt" id="twoPlayer">2 JUGADORES</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="keys">
+      <span>Jugador 1 <b>W / S</b></span>
+      <span>Jugador 2 / CPU <b>↑ / ↓</b></span>
+      <span>Pausa <b>P</b></span>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const W = 800, H = 600, WIN = 7;
+  const board = document.getElementById('board');
+  const ctx = board.getContext('2d');
+
+  const PADDLE_W = 14, PADDLE_H = 96, PADDLE_SPEED = 8;
+  const BALL_R = 9, BALL_SPEED = 6, BALL_MAX = 15;
+
+  let left, right, ball, scoreL, scoreR;
+  let running = false, paused = false, over = false, vsCPU = true;
+  let last = 0;
+  const keys = {};
+
+  function resetBall(dir){
+    const angle = (Math.random() * 0.6 - 0.3); // -0.3..0.3 rad
+    ball = {
+      x: W/2, y: H/2,
+      vx: Math.cos(angle) * BALL_SPEED * dir,
+      vy: Math.sin(angle) * BALL_SPEED,
+      speed: BALL_SPEED
+    };
+  }
+
+  function reset(){
+    left  = { x: 26,        y: H/2 - PADDLE_H/2 };
+    right = { x: W-26-PADDLE_W, y: H/2 - PADDLE_H/2 };
+    scoreL = 0; scoreR = 0; over = false; paused = false;
+    resetBall(Math.random() < 0.5 ? -1 : 1);
+  }
+
+  function start(cpu){
+    vsCPU = cpu;
+    reset();
+    document.getElementById('overlay').classList.add('hidden');
+    running = true; last = 0;
+    requestAnimationFrame(loop);
+  }
+
+  function showOverlay(title, text, single){
+    const o = document.getElementById('overlay');
+    document.getElementById('ovTitle').textContent = title;
+    document.getElementById('ovText').textContent = text;
+    document.getElementById('onePlayer').textContent = single ? 'JUGAR' : '1 JUGADOR';
+    document.getElementById('twoPlayer').style.display = single ? 'none' : '';
+    o.classList.remove('hidden');
+  }
+
+  function clampPaddle(p){
+    if(p.y < 0) p.y = 0;
+    if(p.y > H - PADDLE_H) p.y = H - PADDLE_H;
+  }
+
+  function moveCPU(){
+    // track the ball with a little lag, only when ball heads right
+    const target = ball.y - PADDLE_H/2;
+    const ease = ball.vx > 0 ? 0.085 : 0.04;
+    right.y += (target - right.y) * ease;
+    clampPaddle(right);
+  }
+
+  function bounceOffPaddle(p, dir){
+    // reflect, add english based on where it hit the paddle
+    const rel = (ball.y - (p.y + PADDLE_H/2)) / (PADDLE_H/2); // -1..1
+    ball.speed = Math.min(ball.speed + 0.5, BALL_MAX);
+    const angle = rel * (Math.PI/4); // up to 45deg
+    ball.vx = Math.cos(angle) * ball.speed * dir;
+    ball.vy = Math.sin(angle) * ball.speed;
+  }
+
+  function update(){
+    // paddles
+    if(keys['w'] || keys['W']) left.y -= PADDLE_SPEED;
+    if(keys['s'] || keys['S']) left.y += PADDLE_SPEED;
+    clampPaddle(left);
+
+    if(vsCPU){
+      moveCPU();
+    } else {
+      if(keys['ArrowUp'])   right.y -= PADDLE_SPEED;
+      if(keys['ArrowDown']) right.y += PADDLE_SPEED;
+      clampPaddle(right);
+    }
+
+    // ball
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    // top / bottom walls
+    if(ball.y - BALL_R < 0){ ball.y = BALL_R; ball.vy *= -1; }
+    if(ball.y + BALL_R > H){ ball.y = H - BALL_R; ball.vy *= -1; }
+
+    // left paddle
+    if(ball.vx < 0 && ball.x - BALL_R < left.x + PADDLE_W &&
+       ball.x - BALL_R > left.x &&
+       ball.y > left.y && ball.y < left.y + PADDLE_H){
+      ball.x = left.x + PADDLE_W + BALL_R;
+      bounceOffPaddle(left, 1);
+    }
+    // right paddle
+    if(ball.vx > 0 && ball.x + BALL_R > right.x &&
+       ball.x + BALL_R < right.x + PADDLE_W &&
+       ball.y > right.y && ball.y < right.y + PADDLE_H){
+      ball.x = right.x - BALL_R;
+      bounceOffPaddle(right, -1);
+    }
+
+    // scoring
+    if(ball.x + BALL_R < 0){ scoreR++; afterPoint(1); }
+    else if(ball.x - BALL_R > W){ scoreL++; afterPoint(-1); }
+  }
+
+  function afterPoint(dir){
+    if(scoreL >= WIN || scoreR >= WIN){
+      const who = scoreL > scoreR ? 'JUGADOR 1' : (vsCPU ? 'CPU' : 'JUGADOR 2');
+      over = true; running = false;
+      showOverlay('GANA ' + who, scoreL + ' — ' + scoreR + '  ·  ¡Buena partida!', false);
+    } else {
+      resetBall(dir);
+    }
+  }
+
+  // ---- rendering ----
+  function glowRect(x, y, w, h, color){
+    ctx.save();
+    ctx.shadowColor = color; ctx.shadowBlur = 18;
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+    ctx.restore();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // center dashed line
+    ctx.save();
+    ctx.strokeStyle = 'rgba(120,110,200,.35)';
+    ctx.lineWidth = 4; ctx.setLineDash([14, 18]);
+    ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
+    ctx.restore();
+
+    // scores
+    ctx.save();
+    ctx.font = "64px 'Silkscreen', monospace";
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(34,225,255,.5)';
+    ctx.fillText(scoreL, W/2 - 90, 80);
+    ctx.fillStyle = 'rgba(255,60,166,.5)';
+    ctx.fillText(scoreR, W/2 + 90, 80);
+    ctx.restore();
+
+    // paddles
+    glowRect(left.x, left.y, PADDLE_W, PADDLE_H, '#22e1ff');
+    glowRect(right.x, right.y, PADDLE_W, PADDLE_H, '#ff3ca6');
+
+    // ball
+    ctx.save();
+    ctx.shadowColor = '#ffd24a'; ctx.shadowBlur = 22;
+    ctx.fillStyle = '#ffe9a6';
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  function loop(t){
+    if(!running) return;
+    if(!last) last = t;
+    last = t;
+    if(!paused && !over) update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function togglePause(){
+    if(over || !running) return;
+    paused = !paused;
+    if(paused){
+      const o = document.getElementById('overlay');
+      document.getElementById('ovTitle').textContent = 'PAUSA';
+      document.getElementById('ovText').textContent = 'La bola te espera. Respira.';
+      document.getElementById('onePlayer').textContent = 'CONTINUAR';
+      document.getElementById('twoPlayer').style.display = 'none';
+      o.classList.remove('hidden');
+    } else {
+      document.getElementById('overlay').classList.add('hidden');
+    }
+  }
+
+  // ---- input ----
+  document.addEventListener('keydown', e => {
+    if(['ArrowUp','ArrowDown',' '].includes(e.key)) e.preventDefault();
+    keys[e.key] = true;
+    if(e.key === 'p' || e.key === 'P') togglePause();
+  });
+  document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+  document.getElementById('onePlayer').addEventListener('click', () => {
+    if(paused && running) togglePause(); else start(true);
+  });
+  document.getElementById('twoPlayer').addEventListener('click', () => start(false));
+
+  // initial paint
+  reset(); running = false; draw();
+})();
+</script>
+</body>
+</html>

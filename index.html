@@ -242,7 +242,7 @@
       <div class="console">
         <div class="marquee">
           <h1>NEON ARCADE</h1>
-          <div class="sub">★ INSERT COIN · 4 GAMES · 1 CABINET ★</div>
+          <div class="sub">★ INSERT COIN · 5 GAMES · 1 CABINET ★</div>
         </div>
 
         <div class="bezel">
@@ -310,25 +310,31 @@
 <script>
   const GAMES = [
     {
-      file:"pacman.html", title:"NEON CHOMP", tag:"MAZE · CHASE", icon:"🟡",
+      file:"games/pacman.html", title:"NEON CHOMP", tag:"MAZE · CHASE", icon:"🟡",
       glow:"rgba(255,225,26,.7)",
       desc:"Come todos los puntos del laberinto sin que te atrapen los fantasmas. Los power-pellets te dejan cazarlos.",
       keys:[["Mover","← → ↑ ↓ / WASD"],["Cazar fantasmas","Come un POWER"],["Pausa","P"],["Empezar","ENTER"]]
     },
     {
-      file:"tetris.html", title:"NEON TETRIS", tag:"PUZZLE · BLOCKS", icon:"🧱",
+      file:"games/tetris.html", title:"NEON TETRIS", tag:"PUZZLE · BLOCKS", icon:"🧱",
       glow:"rgba(34,225,255,.7)",
       desc:"Encaja las piezas que caen y completa líneas horizontales para eliminarlas. ¡No dejes que la pila llegue arriba!",
       keys:[["Mover","← →"],["Rotar","↑ / X"],["Bajar","↓"],["Soltar","ESPACIO"],["Guardar","C / SHIFT"],["Pausa","P"]]
     },
     {
-      file:"donkey-kong.html", title:"BARREL CLIMB", tag:"PLATFORM · CLIMB", icon:"🦍",
+      file:"games/donkey-kong.html", title:"BARREL CLIMB", tag:"PLATFORM · CLIMB", icon:"🦍",
       glow:"rgba(255,90,77,.7)",
       desc:"Trepa por las plataformas esquivando barriles hasta llegar a lo más alto. Salta en el momento justo.",
       keys:[["Mover","← →"],["Trepar","↑ ↓"],["Saltar","ESPACIO / Z"],["Pausa","P"]]
     },
     {
-      file:"f1.html", title:"APEX GP", tag:"RACING · F1", icon:"🏎️",
+      file:"games/pong.html", title:"NEON PONG", tag:"ARCADE · DUEL", icon:"🏓",
+      glow:"rgba(34,225,255,.7)",
+      desc:"El duelo clásico de palas. Devuelve la bola, gánale a la CPU o a un amigo. El primero en llegar a 7 puntos gana.",
+      keys:[["Jugador 1","W / S"],["Jugador 2 / CPU","↑ / ↓"],["Pausa","P"]]
+    },
+    {
+      file:"games/f1.html", title:"APEX GP", tag:"RACING · F1", icon:"🏎️",
       glow:"rgba(255,176,0,.75)",
       desc:"Pilota tu monoplaza pixelado, traza las curvas y adelanta a los rivales. Usa el boost en las rectas.",
       keys:[["Girar","← → / A D"],["Acelerar","↑ / W"],["Frenar","↓ / S"],["Boost","SHIFT"],["Pausa","P"],["Reiniciar","R"]]

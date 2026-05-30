@@ -1,17 +1,20 @@
 # 🕹️ NEON ARCADE
 
 Una máquina recreativa retro en el navegador. Una sola cabina con pantalla CRT 4:3
-desde la que eliges entre 4 juegos, lees las instrucciones y juegas — todos comparten
+desde la que eliges entre 5 juegos, lees las instrucciones y juegas — todos comparten
 el mismo tamaño de pantalla.
 
 ## Juegos
 
+Todos los juegos viven en la carpeta [`games/`](games/).
+
 | Juego | Tipo | Archivo |
 |-------|------|---------|
-| 🟡 **Neon Chomp** | Laberinto / comecocos | `pacman.html` |
-| 🧱 **Neon Tetris** | Puzzle de bloques | `tetris.html` |
-| 🦍 **Barrel Climb** | Plataformas / trepar | `donkey-kong.html` |
-| 🏎️ **Apex GP** | Carreras F1 | `f1.html` |
+| 🟡 **Neon Chomp** | Laberinto / comecocos | `games/pacman.html` |
+| 🧱 **Neon Tetris** | Puzzle de bloques | `games/tetris.html` |
+| 🦍 **Barrel Climb** | Plataformas / trepar | `games/donkey-kong.html` |
+| 🏓 **Neon Pong** | Duelo de palas | `games/pong.html` |
+| 🏎️ **Apex GP** | Carreras F1 | `games/f1.html` |
 
 ## Controles de la cabina
 
